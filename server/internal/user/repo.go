@@ -1,12 +1,12 @@
 package user
 
-import "server/internal/db"
+import "github.com/jackc/pgx/v5/pgxpool"
 
 type UserRepo struct {
-	db db.DbConnection
+	db *pgxpool.Pool
 }
 
-func NewRepo(db db.DbConnection) *UserRepo {
+func NewRepo(db *pgxpool.Pool) *UserRepo {
 	return &UserRepo{
 		db: db,
 	}

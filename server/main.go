@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"server/internal/auth"
 	"server/internal/db"
 	"server/internal/user"
+
+	"github.com/joho/godotenv"
 )
 
 type App struct {
@@ -14,9 +17,14 @@ type App struct {
 
 func New() *App {
 
-	router := http.NewServeMux()
+	if err := godotenv.Load(); err != nil {
+		fmt.Println(".env file not found, using system environment")
+	}
 
-	dbConnection, err := db.NewSupabase("", "")
+	databaseURL := os.Getenv("DATABASE_URL")
+	con, err := db.NewPGX(databaseURL)
+
+	router := http.NewServeMux()
 
 	if err != nil {
 		fmt.Println("Found error when connect to supabase", err)
@@ -24,13 +32,13 @@ func New() *App {
 	}
 
 	// init user module
-	userRepo := user.NewRepo(dbConnection)
+	userRepo := user.NewRepo(con)
 	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService)
 	user.RegisterRoutes(router, userHandler)
 
 	// init auth module
-	authRepo := auth.NewRepo(dbConnection)
+	authRepo := auth.NewRepo(con)
 	authService := auth.NewService(authRepo)
 	authHandler := auth.NewHandler(authService)
 	auth.RegisterRoutes(router, authHandler)

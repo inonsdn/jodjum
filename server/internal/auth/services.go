@@ -3,14 +3,18 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrDuplicatedEmail    = errors.New("email is already used")
 )
 
 type AuthService struct {
@@ -33,21 +37,19 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 	// remove space from email
 	userEmail := strings.TrimSpace(email)
 
-	_, err := s.authRepo.db.Login(email, password)
-
-	if err != nil {
-		return LoginResult{}, ErrInvalidCredentials
-	}
-
 	// if no email input or password input, invalid credentials raise error
 	if userEmail == "" || password == "" {
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
 	// verify that email is exist by get user from email
+	authUser, err := s.authRepo.GetUserFromEmail(ctx, email)
+	if err != nil {
+		return LoginResult{}, ErrInvalidCredentials
+	}
 
 	// verify password
-	if err := bcrypt.CompareHashAndPassword([]byte("abc"), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(authUser.Password, []byte(password)); err != nil {
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
@@ -55,7 +57,7 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 
 	return LoginResult{
 		AccessToken: "test",
-		UserId:      "1234124a",
+		UserId:      authUser.UserId.String(),
 	}, nil
 }
 
@@ -69,11 +71,27 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 	}
 
 	// verify email must not duplicate in database
+	authUser, err := s.authRepo.GetUserFromEmail(ctx, email)
+
+	fmt.Println("Get user from email", email)
+
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			fmt.Println("Cannot get with error", err)
+			return LoginResult{}, err
+		}
+	}
+
+	if authUser.UserId != uuid.Nil {
+		fmt.Println("Duplicated email", err)
+		return LoginResult{}, ErrDuplicatedEmail
+	}
 
 	// hash password
 	hashPasswd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	// create user in database
+	s.authRepo.CreateNewUser(ctx, username, email, hashPasswd)
 
 	return LoginResult{}, nil
 }

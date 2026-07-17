@@ -83,7 +83,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrInvalidCredentials) {
 			response.JSON(w, http.StatusBadRequest, "Invalid email or password")
 		} else {
-			response.JSON(w, http.StatusBadRequest, "Invalid")
+			response.JSON(w, http.StatusBadRequest, err.Error())
 		}
 		return
 	}
