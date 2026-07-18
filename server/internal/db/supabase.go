@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/supabase-community/supabase-go"
 )
@@ -27,7 +27,7 @@ func NewSupabase(url string, key string) (*Supabase, error) {
 func (s *Supabase) Login(email string, password string) (AuthTokenSession, error) {
 	session, err := s.client.SignInWithEmailPassword(email, password)
 
-	fmt.Println("LOGIN ", session)
+	slog.Info("LOGIN ", session)
 
 	if err != nil {
 		return AuthTokenSession{}, err
@@ -46,6 +46,6 @@ func (s *Supabase) Login(email string, password string) (AuthTokenSession, error
 func (s *Supabase) Query() {
 	data, count, _ := s.client.From("user").Select("*", "exact", false).Execute()
 
-	fmt.Println("DATA", data)
-	fmt.Println("COUNT", count)
+	slog.Info("DATA", data)
+	slog.Info("COUNT", count)
 }

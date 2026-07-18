@@ -10,9 +10,10 @@ import (
 )
 
 type AuthUser struct {
-	UserId   uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Password []byte    `json:"password"`
+	UserId    uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Password  []byte    `json:"password"`
+	SessionId uuid.UUID `json:"session_id"`
 }
 
 type AuthRepo struct {
@@ -54,6 +55,41 @@ func (r *AuthRepo) CreateNewUser(ctx context.Context, username string, email str
 		password).Scan(
 		&authUser.UserId,
 		&authUser.Email,
+	)
+
+	if err != nil {
+		return AuthUser{}, err
+	}
+	return authUser, nil
+}
+
+func (r *AuthRepo) GetSessionOfUser(ctx context.Context, userId uuid.UUID) (AuthUser, error) {
+	statement := "SELECT id, session_id FROM users WHERE id = $1"
+
+	var authUser AuthUser
+	err := r.db.QueryRow(ctx, statement, userId).Scan(
+		&authUser.UserId,
+		&authUser.SessionId,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AuthUser{}, pgx.ErrNoRows
+		}
+		return AuthUser{}, err
+	}
+
+	return authUser, nil
+}
+
+func (r *AuthRepo) UpdateUserSession(ctx context.Context, userId uuid.UUID, sessionId uuid.UUID) (AuthUser, error) {
+	statement := "UPDATE users SET session_id = $1 WHERE id = $2 RETURNING id, session_id"
+	var authUser AuthUser
+	err := r.db.QueryRow(ctx,
+		statement,
+		sessionId,
+		userId).Scan(
+		&authUser.UserId,
+		&authUser.SessionId,
 	)
 
 	if err != nil {

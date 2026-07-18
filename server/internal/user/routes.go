@@ -1,7 +1,10 @@
 package user
 
-import "net/http"
+import (
+	"net/http"
+	"server/internal/types"
+)
 
-func RegisterRoutes(router *http.ServeMux, handler *UserHandler) {
-	router.HandleFunc("GET /api/v1/me", handler.GetMe)
+func RegisterRoutes(router *http.ServeMux, middleware types.Middleware, handler *UserHandler) {
+	router.Handle("GET /api/v1/me", middleware(http.HandlerFunc(handler.GetMe)))
 }

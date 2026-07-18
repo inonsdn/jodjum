@@ -60,6 +60,32 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	userId, ok := UserIdFromContext(r.Context())
+	if !ok {
+		response.JSON(w, http.StatusBadRequest, "Invalid email or password")
+		return
+	}
+
+	// do service to handle login
+	err := h.service.Logout(r.Context(), userId)
+
+	// found error when authentication
+	if err != nil {
+		if errors.Is(err, ErrInvalidCredentials) {
+			response.JSON(w, http.StatusBadRequest, "Invalid email or password")
+		} else {
+			response.JSON(w, http.StatusBadRequest, "Invalid")
+		}
+		return
+	}
+
+	// login success
+	response.JSON(w, http.StatusOK, "")
+}
+
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 

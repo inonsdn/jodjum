@@ -3,10 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log/slog"
+	"server/internal/token"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -15,10 +15,12 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrDuplicatedEmail    = errors.New("email is already used")
+	UserIDContextKey      = "user_id"
 )
 
 type AuthService struct {
-	authRepo *AuthRepo
+	authRepo     *AuthRepo
+	tokenService *token.TokenService
 }
 
 type LoginResult struct {
@@ -26,12 +28,17 @@ type LoginResult struct {
 	UserId      string
 }
 
-func NewService(AuthRepo *AuthRepo) *AuthService {
+func NewService(AuthRepo *AuthRepo, tokenService *token.TokenService) *AuthService {
 	return &AuthService{
-		authRepo: AuthRepo,
+		authRepo:     AuthRepo,
+		tokenService: tokenService,
 	}
 }
+func UserIdFromContext(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(UserIDContextKey).(uuid.UUID)
+	return userID, ok
 
+}
 func (s *AuthService) Login(ctx context.Context, email string, password string) (LoginResult, error) {
 
 	// remove space from email
@@ -53,10 +60,22 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
+	sessionId := uuid.New()
+
 	// generate token of this users
+	token, err := s.tokenService.Generate(authUser.UserId, sessionId)
+	if err != nil {
+		slog.Error("Cannot generate token", "Error", err)
+		return LoginResult{}, ErrInvalidCredentials
+	}
+
+	_, err = s.authRepo.UpdateUserSession(ctx, authUser.UserId, sessionId)
+	if err != nil {
+		return LoginResult{}, ErrInvalidCredentials
+	}
 
 	return LoginResult{
-		AccessToken: "test",
+		AccessToken: token,
 		UserId:      authUser.UserId.String(),
 	}, nil
 }
@@ -73,17 +92,17 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 	// verify email must not duplicate in database
 	authUser, err := s.authRepo.GetUserFromEmail(ctx, email)
 
-	fmt.Println("Get user from email", email)
+	slog.Debug("Get user from email", "email", email)
 
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			fmt.Println("Cannot get with error", err)
+			slog.Error("Cannot get with error", "Error", err)
 			return LoginResult{}, err
 		}
 	}
 
 	if authUser.UserId != uuid.Nil {
-		fmt.Println("Duplicated email", err)
+		slog.Error("Duplicated email", "Error", err)
 		return LoginResult{}, ErrDuplicatedEmail
 	}
 
@@ -91,19 +110,30 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 	hashPasswd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	// create user in database
-	s.authRepo.CreateNewUser(ctx, username, email, hashPasswd)
+	authUser, err = s.authRepo.CreateNewUser(ctx, username, email, hashPasswd)
 
-	return LoginResult{}, nil
+	if err != nil {
+		slog.Error("Cannot get with error", "Error", err)
+		return LoginResult{}, err
+	}
+	sessionId := uuid.New()
+
+	// generate token of this users
+	token, err := s.tokenService.Generate(authUser.UserId, sessionId)
+	if err != nil {
+		slog.Error("Cannot generate token", "Error", err)
+		return LoginResult{}, ErrInvalidCredentials
+	}
+
+	return LoginResult{
+		AccessToken: token,
+		UserId:      authUser.UserId.String(),
+	}, nil
 }
 
-type Claims struct {
-	Email string `json:"email"`
-	jwt.RegisteredClaims
-}
-type TokenService struct {
-	secret []byte
-}
+func (s *AuthService) Logout(ctx context.Context, userId uuid.UUID) error {
 
-func (s *TokenService) Generate() (string, error) {
-	return "", nil
+	sessionId := uuid.Nil
+	_, err := s.authRepo.UpdateUserSession(ctx, userId, sessionId)
+	return err
 }
