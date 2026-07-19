@@ -541,12 +541,6 @@ body {
   resize: vertical;
 }
 
-/* Never show the "dd/mm/yyyy" hint on an empty date field — it reads like
-   pre-filled data and confuses people. The picked date still shows once set
-   (React drops the .date-empty class when the field has a value). */
-input[type="date"].date-empty::-webkit-datetime-edit {
-  color: transparent;
-}
 
 .field textarea:focus {
   border-color: var(--primary);

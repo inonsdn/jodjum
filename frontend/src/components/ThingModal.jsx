@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isoToDateInput, daysUntil } from "../lib/things.js";
+import DateField from "./DateField.jsx";
 
 // A single modal that handles three modes:
 //   "view"   – read-only details with Edit / Delete actions
@@ -118,9 +119,7 @@ export default function ThingModal({ mode: initialMode, thing, onSave, onDelete,
               </label>
               <label className="field">
                 <span>Expiry date (optional)</span>
-                <input
-                  type="date"
-                  className={form.expiresDate ? undefined : "date-empty"}
+                <DateField
                   value={form.expiresDate}
                   onChange={(e) => setForm({ ...form, expiresDate: e.target.value })}
                 />

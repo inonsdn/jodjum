@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { isoToDateInput } from "../lib/things.js";
 import { REMINDER_TYPES } from "../lib/reminders.js";
+import DateField from "./DateField.jsx";
 
 // Modal for viewing / creating / editing a reminder.
 // Callbacks: onSave(fields), onClose(). (The API has no delete endpoint.)
@@ -98,9 +99,7 @@ export default function ReminderModal({ mode: initialMode, reminder, onSave, onT
             <div className="field-row">
               <label className="field">
                 <span>Remind me on</span>
-                <input
-                  type="date"
-                  className={form.remindDate ? undefined : "date-empty"}
+                <DateField
                   value={form.remindDate}
                   onChange={(e) => setForm({ ...form, remindDate: e.target.value })}
                 />
