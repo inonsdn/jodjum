@@ -20,13 +20,13 @@ func NewRepo(db *pgxpool.Pool) *ThingsRepo {
 }
 
 type Things struct {
-	Id          uuid.UUID `json:"id"`
-	UserId      uuid.UUID `json:"user_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Quantity    int       `json:"quantity"`
-	ExpiredAt   time.Time `json:"expires_at"`
-	CreatedAt   time.Time `json:"created_at"`
+	Id          uuid.UUID  `json:"id"`
+	UserId      uuid.UUID  `json:"user_id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Quantity    int        `json:"quantity"`
+	ExpiredAt   *time.Time `json:"expires_at"` // nil = no expiry set
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 func (r *ThingsRepo) GetThingsOfUser(ctx context.Context, userId uuid.UUID) ([]Things, error) {
@@ -109,7 +109,7 @@ func (r *ThingsRepo) GetThingsById(ctx context.Context, userId uuid.UUID, things
 	return things, nil
 }
 
-func (r *ThingsRepo) CreateThings(ctx context.Context, userId uuid.UUID, name string, description string, quantity int, expiredAt time.Time) (Things, error) {
+func (r *ThingsRepo) CreateThings(ctx context.Context, userId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	const statement = `
 		INSERT INTO things (user_id, name, description, quantity, expires_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -152,7 +152,7 @@ func (r *ThingsRepo) DeleteThings(ctx context.Context, userId uuid.UUID, thingsI
 	return nil
 }
 
-func (r *ThingsRepo) UpdateThings(ctx context.Context, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt time.Time) (Things, error) {
+func (r *ThingsRepo) UpdateThings(ctx context.Context, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	const statement = `
 		UPDATE things
 		SET name = $1, description = $2, quantity = $3, expires_at = $4

@@ -16,7 +16,10 @@ export default function ThingModal({ mode: initialMode, thing, onSave, onDelete,
     name: thing?.name ?? "",
     description: thing?.description ?? "",
     quantity: thing?.quantity ?? 1,
-    expiresDate: thing ? isoToDateInput(thing.expires_at) : defaultExpiry(),
+    expiresDate: thing ? isoToDateInput(thing.expires_at) : "",
+    // Expiry reminder (create flow only): notify N days before the expiry date.
+    notify: false,
+    notifyDaysBefore: 7,
   }));
 
   // Close on Escape for keyboard users.
@@ -114,14 +117,44 @@ export default function ThingModal({ mode: initialMode, thing, onSave, onDelete,
                 />
               </label>
               <label className="field">
-                <span>Expiry date</span>
+                <span>Expiry date (optional)</span>
                 <input
                   type="date"
+                  className={form.expiresDate ? undefined : "date-empty"}
                   value={form.expiresDate}
                   onChange={(e) => setForm({ ...form, expiresDate: e.target.value })}
                 />
               </label>
             </div>
+
+            {/* Expiry reminder — only offered on create, and only once a date is set. */}
+            {mode === "create" && form.expiresDate && (
+              <div className="notify-box">
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={form.notify}
+                    onChange={(e) => setForm({ ...form, notify: e.target.checked })}
+                  />
+                  <span>Remind me before it expires</span>
+                </label>
+
+                {form.notify && (
+                  <div className="chip-row">
+                    {[3, 7, 30].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        className={`chip ${form.notifyDaysBefore === d ? "is-selected" : ""}`}
+                        onClick={() => setForm({ ...form, notifyDaysBefore: d })}
+                      >
+                        {d} days before
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="modal-actions">
               <button
@@ -151,8 +184,14 @@ export default function ThingModal({ mode: initialMode, thing, onSave, onDelete,
               <div>
                 <dt>Expires</dt>
                 <dd>
-                  {formatDate(thing.expires_at)}
-                  <span className="detail-sub"> · {expiryLabel(thing.expires_at)}</span>
+                  {thing.expires_at ? (
+                    <>
+                      {formatDate(thing.expires_at)}
+                      <span className="detail-sub"> · {expiryLabel(thing.expires_at)}</span>
+                    </>
+                  ) : (
+                    <em>No expiry</em>
+                  )}
                 </dd>
               </div>
               <div>
@@ -195,12 +234,6 @@ export default function ThingModal({ mode: initialMode, thing, onSave, onDelete,
       </div>
     </div>
   );
-}
-
-function defaultExpiry() {
-  const d = new Date();
-  d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 10);
 }
 
 function formatDate(iso) {

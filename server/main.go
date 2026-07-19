@@ -8,6 +8,7 @@ import (
 	"server/internal/config"
 	"server/internal/db"
 	"server/internal/middleware"
+	"server/internal/reminders"
 	"server/internal/response"
 	"server/internal/things"
 	"server/internal/token"
@@ -76,6 +77,13 @@ func New() *App {
 	thingsService := things.NewService(thingsRepo)
 	thingsHandler := things.NewHandler(thingsService)
 	things.RegisterRoutes(router, authService.AuthMiddleware, thingsHandler)
+
+	slog.Info("Init reminders module")
+	// init reminders module
+	remindersRepo := reminders.NewRepo(con)
+	remindersService := reminders.NewService(remindersRepo)
+	remindersHandler := reminders.NewHandler(remindersService)
+	reminders.RegisterRoutes(router, authService.AuthMiddleware, remindersHandler)
 
 	server := http.Server{
 		Addr: cfg.Address(),

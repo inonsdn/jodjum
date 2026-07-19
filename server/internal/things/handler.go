@@ -17,17 +17,17 @@ type ThingsHandler struct {
 }
 
 type CreateThingsRequest struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Quantity    int       `json:"quantity"`
-	ExpiredAt   time.Time `json:"expires_at"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Quantity    int        `json:"quantity"`
+	ExpiredAt   *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
 }
 
 type UpdateThingsRequest struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Quantity    int       `json:"quantity"`
-	ExpiredAt   time.Time `json:"expires_at"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Quantity    int        `json:"quantity"`
+	ExpiredAt   *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
 }
 
 func NewHandler(service *ThingsService) *ThingsHandler {

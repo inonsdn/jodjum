@@ -76,7 +76,8 @@ body {
   padding: 11px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font-size: 15px;
+  /* 16px prevents iOS Safari zoom-on-focus. */
+  font-size: 16px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -286,18 +287,20 @@ body {
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px;
   align-items: center;
   margin-bottom: 20px;
 }
 
 .toolbar-search {
-  flex: 1 1 260px;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 11px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font-size: 15px;
+  /* 16px keeps iOS Safari from zooming in when the field is focused. */
+  font-size: 16px;
   outline: none;
   background: var(--card);
 }
@@ -310,6 +313,7 @@ body {
 /* Single filter button + popover holding Expiry / Sort. */
 .filter-menu {
   position: relative;
+  flex: 0 0 auto;
 }
 
 .filter-btn {
@@ -321,9 +325,10 @@ body {
   border-radius: 10px;
   background: var(--card);
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .filter-btn:hover {
@@ -349,6 +354,7 @@ body {
   right: 0;
   z-index: 30;
   width: 220px;
+  max-width: calc(100vw - 40px);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -376,7 +382,8 @@ body {
   padding: 9px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font-size: 14px;
+  /* 16px avoids the iOS focus-zoom on the select too. */
+  font-size: 16px;
   background: var(--card);
   color: var(--text);
   cursor: pointer;
@@ -529,9 +536,16 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
   resize: vertical;
+}
+
+/* Never show the "dd/mm/yyyy" hint on an empty date field — it reads like
+   pre-filled data and confuses people. The picked date still shows once set
+   (React drops the .date-empty class when the field has a value). */
+input[type="date"].date-empty::-webkit-datetime-edit {
+  color: transparent;
 }
 
 .field textarea:focus {
@@ -546,6 +560,62 @@ body {
 
 .field-row .field {
   flex: 1;
+}
+
+/* Checkbox row (reminder "active", "remind me before expiry"). */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Expiry-reminder block inside the Thing create form. */
+.notify-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-accent);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.chip:hover {
+  border-color: var(--primary);
+}
+
+.chip.is-selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 
 .modal-actions {

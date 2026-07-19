@@ -3,6 +3,7 @@ import { useAuth } from "./lib/auth.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ThingsPage from "./pages/ThingsPage.jsx";
+import RemindersPage from "./pages/RemindersPage.jsx";
 import Layout from "./components/Layout.jsx";
 
 // Redirect to the login page when there is no active session.
@@ -42,6 +43,16 @@ export default function App() {
           <RequireAuth>
             <Layout>
               <ThingsPage />
+            </Layout>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/reminders"
+        element={
+          <RequireAuth>
+            <Layout>
+              <RemindersPage />
             </Layout>
           </RequireAuth>
         }

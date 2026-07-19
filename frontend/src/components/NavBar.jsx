@@ -3,7 +3,10 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 
 // Top navigation: horizontal menu on desktop, hamburger-toggled panel on mobile.
-const LINKS = [{ to: "/things", label: "My Things" }];
+const LINKS = [
+  { to: "/things", label: "My Things" },
+  { to: "/reminders", label: "Reminders" },
+];
 
 export default function NavBar() {
   const { signOut } = useAuth();

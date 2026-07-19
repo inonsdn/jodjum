@@ -20,7 +20,9 @@ export function dateInputToIso(date) {
 }
 
 // Whole days from now until the given ISO timestamp (negative if past).
+// Returns null when there is no expiry date.
 export function daysUntil(iso) {
+  if (!iso) return null;
   const ms = new Date(iso).getTime() - Date.now();
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
@@ -87,6 +89,7 @@ function toApiBody({ name, description, quantity, expiresDate }) {
     name,
     description,
     quantity: Number(quantity),
-    expires_at: dateInputToIso(expiresDate),
+    // Expiry is optional: send null when the user left the date blank.
+    expires_at: expiresDate ? dateInputToIso(expiresDate) : null,
   };
 }

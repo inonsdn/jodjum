@@ -8,6 +8,7 @@ import {
   deleteThing,
   daysUntil,
 } from "../lib/things.js";
+import { createReminder, expiryReminderFields } from "../lib/reminders.js";
 import ThingModal from "../components/ThingModal.jsx";
 
 export default function ThingsPage() {
@@ -96,8 +97,12 @@ export default function ThingsPage() {
     list = [...list].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "quantity") return b.quantity - a.quantity;
-      if (sort === "expiry")
-        return new Date(a.expires_at) - new Date(b.expires_at);
+      if (sort === "expiry") {
+        // Things with no expiry sort last (they never expire).
+        const ax = a.expires_at ? new Date(a.expires_at).getTime() : Infinity;
+        const bx = b.expires_at ? new Date(b.expires_at).getTime() : Infinity;
+        return ax - bx;
+      }
       return new Date(b.created_at) - new Date(a.created_at); // recent
     });
 
@@ -107,6 +112,13 @@ export default function ThingsPage() {
   async function handleSave(fields) {
     if (modal.mode === "create") {
       await createThing(fields, token);
+      // If the user asked to be reminded before expiry, create a one-time reminder.
+      if (fields.notify && fields.expiresDate) {
+        await createReminder(
+          expiryReminderFields(fields.name, fields.expiresDate, fields.notifyDaysBefore),
+          token,
+        );
+      }
     } else {
       await updateThing(modal.thing.id, fields, token);
     }
@@ -245,6 +257,7 @@ export default function ThingsPage() {
 }
 
 function expiryText(iso) {
+  if (!iso) return "No expiry";
   const days = daysUntil(iso);
   const date = new Date(iso).toLocaleDateString(undefined, {
     month: "short",

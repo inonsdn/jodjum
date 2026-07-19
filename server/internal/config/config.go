@@ -15,13 +15,20 @@ type TokenConfig struct {
 	Expire int
 }
 
+type WebPushNotificationConfig struct {
+	VapidSubject string
+	VapidPublic  string
+	VapidPrivate string
+}
+
 type Config struct {
 	DatabaseUrl   string
 	Host          string
 	Port          int
 	AllowedOrigin string
 
-	token *TokenConfig
+	token   *TokenConfig
+	webPush *WebPushNotificationConfig
 }
 
 func LoadConfig() *Config {
@@ -48,6 +55,11 @@ func LoadConfig() *Config {
 			Issuer: os.Getenv("JWT_ISSUER"),
 			Expire: tokenExpire,
 		},
+		webPush: &WebPushNotificationConfig{
+			VapidSubject: os.Getenv("VAPID_SUBJECT"),
+			VapidPublic:  os.Getenv("VAPID_PUBLIC_KEY"),
+			VapidPrivate: os.Getenv("VAPID_PRIVATE_KEY"),
+		},
 	}
 }
 
@@ -57,4 +69,8 @@ func (c *Config) Address() string {
 
 func (c *Config) GetTokenConfig() *TokenConfig {
 	return c.token
+}
+
+func (c *Config) GetWebPushNotificationConfig() *WebPushNotificationConfig {
+	return c.webPush
 }

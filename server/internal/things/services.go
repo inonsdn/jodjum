@@ -25,11 +25,11 @@ func (s *ThingsService) GetThingsById(ctx context.Context, userId uuid.UUID, thi
 	return s.thingsRepo.GetThingsById(ctx, userId, thingsId)
 }
 
-func (s *ThingsService) CreateThings(ctx context.Context, userId uuid.UUID, name string, description string, quantity int, expiredAt time.Time) (Things, error) {
+func (s *ThingsService) CreateThings(ctx context.Context, userId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	return s.thingsRepo.CreateThings(ctx, userId, name, description, quantity, expiredAt)
 }
 
-func (s *ThingsService) UpdateThings(ctx context.Context, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt time.Time) (Things, error) {
+func (s *ThingsService) UpdateThings(ctx context.Context, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	return s.thingsRepo.UpdateThings(ctx, userId, thingsId, name, description, quantity, expiredAt)
 }
 
