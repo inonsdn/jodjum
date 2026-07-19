@@ -43,6 +43,7 @@ func New() *App {
 
 	// Public health check for load balancers / Cloud Run probes (no auth).
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("health check hit")
 		response.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
@@ -78,9 +79,10 @@ func New() *App {
 
 	server := http.Server{
 		Addr: cfg.Address(),
-		// CORS wraps the whole router so it runs before auth and can answer
-		// the browser's preflight (OPTIONS) requests.
-		Handler: middleware.CORS(cfg.AllowedOrigin)(router),
+		// Logger is outermost so it records every request (including the CORS
+		// preflight OPTIONS that CORS answers). CORS then wraps the router so
+		// it runs before auth.
+		Handler: middleware.Logger(middleware.CORS(cfg.AllowedOrigin)(router)),
 	}
 
 	return &App{
