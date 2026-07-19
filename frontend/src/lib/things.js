@@ -1,7 +1,7 @@
 // Client for the Go server's "things" API. Every endpoint requires a Bearer token.
 // Requests hit /api/... and are proxied to the Go server in dev (see vite.config.js).
 
-const BASE = "/api/v1";
+import { API_BASE as BASE } from "./config.js";
 
 // The server stores expires_at / created_at as timestamptz, serialized as RFC3339
 // strings (e.g. "2026-07-26T00:00:00Z"). The UI works with <input type="date">

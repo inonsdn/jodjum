@@ -1,7 +1,7 @@
 // Thin wrapper around the Go server's auth API.
 // Requests go to /api/... and are proxied to the Go server in dev (see vite.config.js).
 
-const BASE = "/api/v1";
+import { API_BASE as BASE } from "./config.js";
 
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
