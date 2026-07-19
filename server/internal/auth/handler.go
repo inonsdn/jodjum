@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"server/internal/constants"
 	"server/internal/response"
 )
 
@@ -48,7 +49,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// found error when authentication
 	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
+		if errors.Is(err, constants.ErrInvalidCredentials) {
 			response.JSON(w, http.StatusBadRequest, "Invalid email or password")
 		} else {
 			response.JSON(w, http.StatusBadRequest, "Invalid")
@@ -63,18 +64,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userId, ok := UserIdFromContext(r.Context())
-	if !ok {
-		response.JSON(w, http.StatusBadRequest, "Invalid email or password")
-		return
-	}
+	userId := response.GetUserIdFromContext(r.Context(), w)
 
 	// do service to handle login
 	err := h.service.Logout(r.Context(), userId)
 
 	// found error when authentication
 	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
+		if errors.Is(err, constants.ErrInvalidCredentials) {
 			response.JSON(w, http.StatusBadRequest, "Invalid email or password")
 		} else {
 			response.JSON(w, http.StatusBadRequest, "Invalid")
@@ -106,7 +103,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// found error when authentication
 	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
+		if errors.Is(err, constants.ErrInvalidCredentials) {
 			response.JSON(w, http.StatusBadRequest, "Invalid email or password")
 		} else {
 			response.JSON(w, http.StatusBadRequest, err.Error())

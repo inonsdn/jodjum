@@ -1,0 +1,10 @@
+# Files not uploaded to Cloud Build when running `gcloud run deploy --source .`
+.git
+.gitignore
+.claude
+.vscode
+frontend
+notes.txt
+fly.toml
+**/.env
+deploy-gcp.sh

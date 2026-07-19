@@ -16,9 +16,10 @@ type TokenConfig struct {
 }
 
 type Config struct {
-	DatabaseUrl string
-	Host        string
-	Port        int
+	DatabaseUrl   string
+	Host          string
+	Port          int
+	AllowedOrigin string
 
 	token *TokenConfig
 }
@@ -26,7 +27,6 @@ type Config struct {
 func LoadConfig() *Config {
 	if err := godotenv.Load(); err != nil {
 		slog.Info(".env file not found, using system environment")
-		return nil
 	}
 	portNum, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
@@ -39,9 +39,10 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		DatabaseUrl: os.Getenv("DATABASE_URL"),
-		Host:        os.Getenv("HOST"),
-		Port:        portNum,
+		DatabaseUrl:   os.Getenv("DATABASE_URL"),
+		Host:          os.Getenv("HOST"),
+		Port:          portNum,
+		AllowedOrigin: os.Getenv("ALLOWED_ORIGIN"),
 		token: &TokenConfig{
 			Secret: os.Getenv("JWT_SECRET"),
 			Issuer: os.Getenv("JWT_ISSUER"),

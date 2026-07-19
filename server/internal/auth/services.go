@@ -4,18 +4,13 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"server/internal/constants"
 	"server/internal/token"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrDuplicatedEmail    = errors.New("email is already used")
-	UserIDContextKey      = "user_id"
 )
 
 type AuthService struct {
@@ -34,11 +29,7 @@ func NewService(AuthRepo *AuthRepo, tokenService *token.TokenService) *AuthServi
 		tokenService: tokenService,
 	}
 }
-func UserIdFromContext(ctx context.Context) (uuid.UUID, bool) {
-	userID, ok := ctx.Value(UserIDContextKey).(uuid.UUID)
-	return userID, ok
 
-}
 func (s *AuthService) Login(ctx context.Context, email string, password string) (LoginResult, error) {
 
 	// remove space from email
@@ -46,18 +37,18 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 
 	// if no email input or password input, invalid credentials raise error
 	if userEmail == "" || password == "" {
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	// verify that email is exist by get user from email
 	authUser, err := s.authRepo.GetUserFromEmail(ctx, email)
 	if err != nil {
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	// verify password
 	if err := bcrypt.CompareHashAndPassword(authUser.Password, []byte(password)); err != nil {
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	sessionId := uuid.New()
@@ -66,12 +57,12 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 	token, err := s.tokenService.Generate(authUser.UserId, sessionId)
 	if err != nil {
 		slog.Error("Cannot generate token", "Error", err)
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	_, err = s.authRepo.UpdateUserSession(ctx, authUser.UserId, sessionId)
 	if err != nil {
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	return LoginResult{
@@ -86,7 +77,7 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 
 	// if no email input or password input, invalid credentials raise error
 	if userEmail == "" || password == "" {
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	// verify email must not duplicate in database
@@ -103,7 +94,7 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 
 	if authUser.UserId != uuid.Nil {
 		slog.Error("Duplicated email", "Error", err)
-		return LoginResult{}, ErrDuplicatedEmail
+		return LoginResult{}, constants.ErrDuplicatedEmail
 	}
 
 	// hash password
@@ -122,7 +113,7 @@ func (s *AuthService) RegisterUser(ctx context.Context, username string, email s
 	token, err := s.tokenService.Generate(authUser.UserId, sessionId)
 	if err != nil {
 		slog.Error("Cannot generate token", "Error", err)
-		return LoginResult{}, ErrInvalidCredentials
+		return LoginResult{}, constants.ErrInvalidCredentials
 	}
 
 	return LoginResult{

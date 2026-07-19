@@ -7,6 +7,9 @@ import (
 	"server/internal/auth"
 	"server/internal/config"
 	"server/internal/db"
+	"server/internal/middleware"
+	"server/internal/response"
+	"server/internal/things"
 	"server/internal/token"
 	"server/internal/user"
 )
@@ -38,6 +41,11 @@ func New() *App {
 
 	router := http.NewServeMux()
 
+	// Public health check for load balancers / Cloud Run probes (no auth).
+	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		response.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+
 	if err != nil {
 		slog.Error("Found error when connect to database", "Error", err.Error())
 		return nil
@@ -61,9 +69,18 @@ func New() *App {
 	userHandler := user.NewHandler(userService)
 	user.RegisterRoutes(router, authService.AuthMiddleware, userHandler)
 
+	slog.Info("Init things module")
+	// init things module
+	thingsRepo := things.NewRepo(con)
+	thingsService := things.NewService(thingsRepo)
+	thingsHandler := things.NewHandler(thingsService)
+	things.RegisterRoutes(router, authService.AuthMiddleware, thingsHandler)
+
 	server := http.Server{
-		Addr:    cfg.Address(),
-		Handler: router,
+		Addr: cfg.Address(),
+		// CORS wraps the whole router so it runs before auth and can answer
+		// the browser's preflight (OPTIONS) requests.
+		Handler: middleware.CORS(cfg.AllowedOrigin)(router),
 	}
 
 	return &App{
@@ -73,7 +90,9 @@ func New() *App {
 
 func (a *App) Run() {
 	slog.Info("Run and serve", "address", a.server.Addr)
-	a.server.ListenAndServe()
+	if err := a.server.ListenAndServe(); err != nil {
+		slog.Error("ERROR", "error", err)
+	}
 }
 
 func main() {

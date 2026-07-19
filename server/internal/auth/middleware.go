@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"server/internal/constants"
 	"server/internal/response"
 	"strings"
 
@@ -54,7 +55,7 @@ func (s *AuthService) AuthMiddleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(
 			r.Context(),
-			UserIDContextKey,
+			constants.UserIDContextKey,
 			parseResult.UserId,
 		)
 
