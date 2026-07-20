@@ -547,6 +547,38 @@ body {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
+/* Native date input styled to match the other fields. Clicking anywhere opens
+   the calendar (see DateField.jsx); the browser's placeholder date is hidden
+   while empty via transparent text (both color and -webkit-text-fill-color so
+   Safari respects it too). */
+.field-date {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 43px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  cursor: pointer;
+}
+
+.field-date:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+/* Hide the browser's placeholder date only while the field is empty AND not
+   focused. When focused (calendar open) the segments show normally, so the
+   highlighted segment doesn't render as a mystery blue box over hidden text. */
+.field-date.is-empty:not(:focus)::-webkit-datetime-edit {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 .field-row {
   display: flex;
   gap: 12px;

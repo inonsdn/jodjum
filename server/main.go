@@ -8,6 +8,7 @@ import (
 	"server/internal/config"
 	"server/internal/db"
 	"server/internal/middleware"
+	"server/internal/notification"
 	"server/internal/reminders"
 	"server/internal/response"
 	"server/internal/things"
@@ -71,19 +72,27 @@ func New() *App {
 	userHandler := user.NewHandler(userService)
 	user.RegisterRoutes(router, authService.AuthMiddleware, userHandler)
 
-	slog.Info("Init things module")
-	// init things module
-	thingsRepo := things.NewRepo(con)
-	thingsService := things.NewService(thingsRepo)
-	thingsHandler := things.NewHandler(thingsService)
-	things.RegisterRoutes(router, authService.AuthMiddleware, thingsHandler)
-
 	slog.Info("Init reminders module")
-	// init reminders module
+	// init reminders module (before things: things creates reminders in the
+	// same transaction, so it needs the reminders repo)
 	remindersRepo := reminders.NewRepo(con)
 	remindersService := reminders.NewService(remindersRepo)
 	remindersHandler := reminders.NewHandler(remindersService)
 	reminders.RegisterRoutes(router, authService.AuthMiddleware, remindersHandler)
+
+	slog.Info("Init things module")
+	// init things module
+	thingsRepo := things.NewRepo(con)
+	thingsService := things.NewService(thingsRepo, remindersRepo)
+	thingsHandler := things.NewHandler(thingsService)
+	things.RegisterRoutes(router, authService.AuthMiddleware, thingsHandler)
+
+	slog.Info("Init notification module")
+	// init notification module (Web Push subscription management)
+	notificationRepo := notification.NewRepo(con)
+	notificationService := notification.NewService(notificationRepo)
+	notificationHandler := notification.NewHandler(notificationService)
+	notification.RegisterRoutes(router, authService.AuthMiddleware, notificationHandler)
 
 	server := http.Server{
 		Addr: cfg.Address(),

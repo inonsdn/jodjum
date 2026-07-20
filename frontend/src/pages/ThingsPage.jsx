@@ -8,7 +8,6 @@ import {
   deleteThing,
   daysUntil,
 } from "../lib/things.js";
-import { createReminder, expiryReminderFields } from "../lib/reminders.js";
 import ThingModal from "../components/ThingModal.jsx";
 
 export default function ThingsPage() {
@@ -110,15 +109,10 @@ export default function ThingsPage() {
   }, [things, search, expiryFilter, sort]);
 
   async function handleSave(fields) {
+    // The thing payload carries next_remind_timestamp (see toApiBody); the server
+    // creates the one-time reminder from it, so we don't create one here.
     if (modal.mode === "create") {
       await createThing(fields, token);
-      // If the user asked to be reminded before expiry, create a one-time reminder.
-      if (fields.notify && fields.expiresDate) {
-        await createReminder(
-          expiryReminderFields(fields.name, fields.expiresDate, fields.notifyDaysBefore),
-          token,
-        );
-      }
     } else {
       await updateThing(modal.thing.id, fields, token);
     }

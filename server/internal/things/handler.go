@@ -17,17 +17,19 @@ type ThingsHandler struct {
 }
 
 type CreateThingsRequest struct {
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Quantity    int        `json:"quantity"`
-	ExpiredAt   *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
+	Name                string     `json:"name"`
+	Description         string     `json:"description"`
+	Quantity            int        `json:"quantity"`
+	ExpiredAt           *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
+	NextRemindTimestamp *float64   `json:"next_remind_timestamp"`
 }
 
 type UpdateThingsRequest struct {
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Quantity    int        `json:"quantity"`
-	ExpiredAt   *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
+	Name                string     `json:"name"`
+	Description         string     `json:"description"`
+	Quantity            int        `json:"quantity"`
+	ExpiredAt           *time.Time `json:"expires_at"` // nil when the user leaves expiry blank
+	NextRemindTimestamp *float64   `json:"next_remind_timestamp"`
 }
 
 func NewHandler(service *ThingsService) *ThingsHandler {
@@ -87,7 +89,7 @@ func (h *ThingsHandler) CreateThings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	things, err := h.service.CreateThings(r.Context(), userId, req.Name, req.Description, req.Quantity, req.ExpiredAt)
+	things, err := h.service.CreateThings(r.Context(), userId, req.Name, req.Description, req.Quantity, req.ExpiredAt, req.NextRemindTimestamp)
 	if err != nil {
 		slog.Error("Error when create things", "Error", err.Error())
 		response.JSON(w, http.StatusInternalServerError, "internal server error")
@@ -140,7 +142,7 @@ func (h *ThingsHandler) UpdateThings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	things, err := h.service.UpdateThings(r.Context(), userId, thingsId, req.Name, req.Description, req.Quantity, req.ExpiredAt)
+	things, err := h.service.UpdateThings(r.Context(), userId, thingsId, req.Name, req.Description, req.Quantity, req.ExpiredAt, req.NextRemindTimestamp)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.JSON(w, http.StatusNotFound, "Things not found")

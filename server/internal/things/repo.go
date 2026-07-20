@@ -2,6 +2,7 @@ package things
 
 import (
 	"context"
+	"server/internal/db"
 	"time"
 
 	"github.com/google/uuid"
@@ -110,6 +111,12 @@ func (r *ThingsRepo) GetThingsById(ctx context.Context, userId uuid.UUID, things
 }
 
 func (r *ThingsRepo) CreateThings(ctx context.Context, userId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
+	return r.CreateThingsTx(ctx, r.db, userId, name, description, quantity, expiredAt)
+}
+
+// CreateThingsTx inserts a thing using the given Querier, so it can run inside a
+// transaction shared with other writes (e.g. an accompanying reminder).
+func (r *ThingsRepo) CreateThingsTx(ctx context.Context, q db.Querier, userId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	const statement = `
 		INSERT INTO things (user_id, name, description, quantity, expires_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -117,7 +124,7 @@ func (r *ThingsRepo) CreateThings(ctx context.Context, userId uuid.UUID, name st
 	`
 
 	var things Things
-	err := r.db.QueryRow(ctx, statement, userId, name, description, quantity, expiredAt).Scan(
+	err := q.QueryRow(ctx, statement, userId, name, description, quantity, expiredAt).Scan(
 		&things.Id,
 		&things.UserId,
 		&things.Name,
@@ -153,6 +160,12 @@ func (r *ThingsRepo) DeleteThings(ctx context.Context, userId uuid.UUID, thingsI
 }
 
 func (r *ThingsRepo) UpdateThings(ctx context.Context, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
+	return r.UpdateThingsTx(ctx, r.db, userId, thingsId, name, description, quantity, expiredAt)
+}
+
+// UpdateThingsTx updates a thing using the given Querier, so it can run inside a
+// transaction shared with other writes.
+func (r *ThingsRepo) UpdateThingsTx(ctx context.Context, q db.Querier, userId uuid.UUID, thingsId uuid.UUID, name string, description string, quantity int, expiredAt *time.Time) (Things, error) {
 	const statement = `
 		UPDATE things
 		SET name = $1, description = $2, quantity = $3, expires_at = $4
@@ -161,7 +174,7 @@ func (r *ThingsRepo) UpdateThings(ctx context.Context, userId uuid.UUID, thingsI
 	`
 
 	var things Things
-	err := r.db.QueryRow(ctx, statement, name, description, quantity, expiredAt, thingsId, userId).Scan(
+	err := q.QueryRow(ctx, statement, name, description, quantity, expiredAt, thingsId, userId).Scan(
 		&things.Id,
 		&things.UserId,
 		&things.Name,

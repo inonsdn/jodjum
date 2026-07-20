@@ -84,12 +84,30 @@ export function deleteThing(id, token) {
   return request(`/things/${id}`, { method: "DELETE", token });
 }
 
-function toApiBody({ name, description, quantity, expiresDate }) {
-  return {
+function toApiBody({ name, description, quantity, expiresDate, notify, notifyDaysBefore }) {
+  const body = {
     name,
     description,
     quantity: Number(quantity),
     // Expiry is optional: send null when the user left the date blank.
     expires_at: expiresDate ? dateInputToIso(expiresDate) : null,
   };
+
+  // Seconds from now until the reminder should fire; the server does
+  // `now + value·seconds` and creates a one-time reminder. Only include the
+  // field when a reminder was actually requested.
+  const offset = remindOffsetSeconds(expiresDate, notify, notifyDaysBefore);
+  if (offset !== null) body.next_remind_timestamp = offset;
+
+  return body;
+}
+
+// Seconds from now until "notifyDaysBefore days before the expiry date", or null
+// when the user didn't ask to be reminded.
+function remindOffsetSeconds(expiresDate, notify, notifyDaysBefore) {
+  if (!notify || !expiresDate || !notifyDaysBefore) return null;
+  const dayMs = 24 * 60 * 60 * 1000;
+  const expiryMs = new Date(`${expiresDate}T00:00:00Z`).getTime();
+  const remindMs = expiryMs - Number(notifyDaysBefore) * dayMs;
+  return Math.round((remindMs - Date.now()) / 1000);
 }

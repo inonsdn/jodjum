@@ -30,7 +30,7 @@ func (a *ReminderApp) updateReminderAfterNotify(ctx context.Context, reminder Re
 		reminderTimestamp := reminder.RemindTimestamp.Add(constants.ONE_MONTH_TIMESTAMP_SECS * 12)
 		a.remindersRepo.UpdateReminder(ctx, reminder.UserId, reminder.Id, reminderTimestamp, reminder.ReminderType, true, reminder.Name, reminder.Description)
 	} else {
-
+		return
 	}
 }
 

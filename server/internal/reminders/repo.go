@@ -2,6 +2,7 @@ package reminders
 
 import (
 	"context"
+	"server/internal/db"
 	"time"
 
 	"github.com/google/uuid"
@@ -116,6 +117,14 @@ func (r *RemindersRepo) GetReminderById(ctx context.Context, userId uuid.UUID, r
 }
 
 func (r *RemindersRepo) CreateReminder(ctx context.Context, userId uuid.UUID, remindTimestamp time.Time, reminderType int, isActive bool, name string, description string) (Reminder, error) {
+	// Standalone create runs directly on the pool.
+	return r.CreateReminderTx(ctx, r.db, userId, remindTimestamp, reminderType, isActive, name, description)
+}
+
+// CreateReminderTx inserts a reminder using the given Querier, so callers can
+// pass a pgx.Tx to make it part of a larger transaction (e.g. things + reminder
+// committing or rolling back together).
+func (r *RemindersRepo) CreateReminderTx(ctx context.Context, q db.Querier, userId uuid.UUID, remindTimestamp time.Time, reminderType int, isActive bool, name string, description string) (Reminder, error) {
 	const statement = `
 		INSERT INTO reminders (user_id, remind_timestamp, reminder_type, is_active, name, description)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -123,7 +132,7 @@ func (r *RemindersRepo) CreateReminder(ctx context.Context, userId uuid.UUID, re
 	`
 
 	var reminder Reminder
-	err := r.db.QueryRow(ctx, statement, userId, remindTimestamp, reminderType, isActive, name, description).Scan(
+	err := q.QueryRow(ctx, statement, userId, remindTimestamp, reminderType, isActive, name, description).Scan(
 		&reminder.Id,
 		&reminder.UserId,
 		&reminder.RemindTimestamp,
