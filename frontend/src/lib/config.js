@@ -12,3 +12,8 @@
 const ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 
 export const API_BASE = `${ORIGIN}/api/v1`;
+
+// Public half of the server's Web Push VAPID key pair (see server/.env
+// VAPID_PUBLIC_KEY — same value, mirrored here since it's safe to ship to the
+// browser). Used by src/lib/push.js as the PushManager applicationServerKey.
+export const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "";

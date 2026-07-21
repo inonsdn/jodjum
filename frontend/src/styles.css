@@ -205,6 +205,36 @@ body {
   margin-left: 6px;
 }
 
+.nav-bell {
+  position: relative;
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.nav-bell.is-on {
+  background: rgba(139, 92, 246, 0.14);
+}
+
+.nav-bell-error {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 200px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--error-bg);
+  color: var(--error-text);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: normal;
+  box-shadow: 0 10px 20px rgba(76, 29, 149, 0.14);
+}
+
 /* Hamburger button — hidden on desktop, shown on mobile. */
 .nav-toggle {
   display: none;
@@ -256,6 +286,11 @@ body {
   .nav-logout {
     margin: 6px 0 0;
     width: 100%;
+  }
+
+  .nav-bell {
+    width: 100%;
+    justify-content: center;
   }
 }
 

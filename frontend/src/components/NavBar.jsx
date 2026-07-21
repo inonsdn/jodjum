@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
+import NotificationToggle from "./NotificationToggle.jsx";
 
 // Top navigation: horizontal menu on desktop, hamburger-toggled panel on mobile.
 const LINKS = [
@@ -46,6 +47,7 @@ export default function NavBar() {
               {link.label}
             </NavLink>
           ))}
+          <NotificationToggle />
           <button className="btn btn-ghost nav-logout" onClick={handleLogout}>
             Log out
           </button>
