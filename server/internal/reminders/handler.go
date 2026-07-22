@@ -99,7 +99,7 @@ func (h *RemindersHandler) CreateReminder(w http.ResponseWriter, r *http.Request
 	}
 
 	if !isValidReminderType(req.ReminderType) {
-		response.JSON(w, http.StatusBadRequest, "reminder_type must be one of: onetime, daily, monthly, yearly")
+		response.JSON(w, http.StatusBadRequest, "reminder_type must be one of: 1 (onetime), 2 (daily), 3 (monthly), 4 (yearly)")
 		return
 	}
 
@@ -134,7 +134,7 @@ func (h *RemindersHandler) UpdateReminder(w http.ResponseWriter, r *http.Request
 	}
 
 	if !isValidReminderType(req.ReminderType) {
-		response.JSON(w, http.StatusBadRequest, "reminder_type must be one of: onetime, daily, monthly, yearly")
+		response.JSON(w, http.StatusBadRequest, "reminder_type must be one of: 1 (onetime), 2 (daily), 3 (monthly), 4 (yearly)")
 		return
 	}
 

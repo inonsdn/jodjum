@@ -4,6 +4,17 @@ import { dateInputToIso } from "./things.js";
 
 export const REMINDER_TYPES = ["onetime", "daily", "monthly", "yearly"];
 
+// The backend represents reminder_type as an int (1-4); the UI uses strings.
+// Translate at the API boundary so components stay string-based.
+const TYPE_TO_INT = { onetime: 1, daily: 2, monthly: 3, yearly: 4 };
+const INT_TO_TYPE = { 1: "onetime", 2: "daily", 3: "monthly", 4: "yearly" };
+
+// Normalize a reminder coming back from the API: int reminder_type -> string.
+function fromApi(reminder) {
+  if (!reminder) return reminder;
+  return { ...reminder, reminder_type: INT_TO_TYPE[reminder.reminder_type] ?? reminder.reminder_type };
+}
+
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = {};
   if (body) headers["Content-Type"] = "application/json";
@@ -32,21 +43,22 @@ async function request(path, { method = "GET", body, token } = {}) {
   return data;
 }
 
-export function listReminders(token) {
-  return request("/myReminders", { token });
+export async function listReminders(token) {
+  const list = await request("/myReminders", { token });
+  return Array.isArray(list) ? list.map(fromApi) : list;
 }
 
-export function getReminder(id, token) {
-  return request(`/reminders/${id}`, { token });
+export async function getReminder(id, token) {
+  return fromApi(await request(`/reminders/${id}`, { token }));
 }
 
 // fields: { name, description, remindDate ("YYYY-MM-DD"), reminderType, isActive }
-export function createReminder(fields, token) {
-  return request("/reminders", { method: "POST", token, body: toApiBody(fields) });
+export async function createReminder(fields, token) {
+  return fromApi(await request("/reminders", { method: "POST", token, body: toApiBody(fields) }));
 }
 
-export function updateReminder(id, fields, token) {
-  return request(`/reminders/${id}`, { method: "PUT", token, body: toApiBody(fields) });
+export async function updateReminder(id, fields, token) {
+  return fromApi(await request(`/reminders/${id}`, { method: "PUT", token, body: toApiBody(fields) }));
 }
 
 function toApiBody({ name, description, remindDate, reminderType, isActive }) {
@@ -54,7 +66,7 @@ function toApiBody({ name, description, remindDate, reminderType, isActive }) {
     name,
     description,
     remind_timestamp: dateInputToIso(remindDate),
-    reminder_type: reminderType,
+    reminder_type: TYPE_TO_INT[reminderType] ?? 1,
     is_active: Boolean(isActive),
   };
 }

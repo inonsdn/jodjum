@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import NotificationToggle from "./NotificationToggle.jsx";
+import VersionTag from "./VersionTag.jsx";
 
 // Top navigation: horizontal menu on desktop, hamburger-toggled panel on mobile.
 const LINKS = [
@@ -23,7 +24,10 @@ export default function NavBar() {
   return (
     <header className="nav">
       <div className="nav-inner">
-        <span className="nav-brand">Jodjum</span>
+        <div className="nav-brand-group">
+          <span className="nav-brand">Jodjum</span>
+          <VersionTag />
+        </div>
 
         <button
           className="nav-toggle"

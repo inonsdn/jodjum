@@ -160,11 +160,17 @@ body {
 .nav-inner {
   max-width: 960px;
   margin: 0 auto;
-  height: 60px;
-  padding: 0 20px;
+  min-height: 60px;
+  padding: 8px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.nav-brand-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .nav-brand {
@@ -172,6 +178,7 @@ body {
   font-size: 18px;
   letter-spacing: 0.02em;
   color: var(--primary-hover);
+  line-height: 1.1;
 }
 
 .nav-menu {
@@ -233,6 +240,16 @@ body {
   font-weight: 500;
   white-space: normal;
   box-shadow: 0 10px 20px rgba(76, 29, 149, 0.14);
+}
+
+/* Tiny build version tag, for debugging — deliberately unobtrusive. */
+.nav-version {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  opacity: 0.7;
+  white-space: nowrap;
 }
 
 /* Hamburger button — hidden on desktop, shown on mobile. */

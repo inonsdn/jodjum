@@ -28,6 +28,12 @@ type WebPushNotification struct {
 }
 
 func NewWebPushNotification(cfg config.WebPushNotificationConfig, notificationServices *NotificationService) *WebPushNotification {
+	// Confirm VAPID config is loaded without leaking the private key.
+	slog.Info("web push configured",
+		"subject", cfg.VapidSubject,
+		"publicKeySet", cfg.VapidPublic != "",
+		"privateKeySet", cfg.VapidPrivate != "")
+
 	return &WebPushNotification{
 		vapidSubject:         cfg.VapidSubject,
 		vapidPublic:          cfg.VapidPublic,
@@ -43,6 +49,7 @@ func (n *WebPushNotification) Notify(ctx context.Context, userId uuid.UUID, titl
 		slog.Error("Cannot get subscriptions of user", "userId", userId.String())
 		return
 	}
+	slog.Info("push: sending to subscriptions", "userId", userId.String(), "count", len(notificationSubscriptions), "title", title)
 	for _, subscription := range notificationSubscriptions {
 		payload := NotificationPayload{
 			Title: title,
@@ -71,6 +78,13 @@ func (n *WebPushNotification) Notify(ctx context.Context, userId uuid.UUID, titl
 			// in-loop (not deferred) so bodies don't pile up across iterations.
 			slog.Error("failed to send push notification", "error", err.Error(), "endpoint", subscription.Endpoint)
 			continue
+		}
+		// A 2xx (usually 201) means the push service accepted it. 4xx/410 means
+		// the subscription is invalid/expired and should be pruned.
+		if resp.StatusCode >= 400 {
+			slog.Warn("push service rejected notification", "status", resp.StatusCode, "endpoint", subscription.Endpoint)
+		} else {
+			slog.Info("push sent", "status", resp.StatusCode, "endpoint", subscription.Endpoint)
 		}
 		resp.Body.Close()
 	}
