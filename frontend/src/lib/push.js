@@ -53,7 +53,7 @@ export async function subscribeToPush(token) {
     throw new Error("Push notifications aren't supported in this browser");
   }
   if (!VAPID_PUBLIC_KEY) {
-    throw new Error("Missing VITE_VAPID_PUBLIC_KEY — notifications aren't configured");
+    throw new Error("Missing VAPID_PUBLIC_KEY — notifications aren't configured");
   }
 
   const permission = await Notification.requestPermission();
