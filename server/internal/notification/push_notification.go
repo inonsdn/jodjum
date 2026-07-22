@@ -11,7 +11,8 @@ import (
 )
 
 type Notification interface {
-	Notify(string, string)
+	// Notify pushes a message to every device the user has subscribed with.
+	Notify(ctx context.Context, userId uuid.UUID, title string, body string)
 }
 
 type NotificationPayload struct {
@@ -65,6 +66,12 @@ func (n *WebPushNotification) Notify(ctx context.Context, userId uuid.UUID, titl
 			VAPIDPrivateKey: n.vapidPrivate,
 			TTL:             30,
 		})
-		defer resp.Body.Close()
+		if err != nil {
+			// On error resp is nil, so guard before touching resp.Body. Close
+			// in-loop (not deferred) so bodies don't pile up across iterations.
+			slog.Error("failed to send push notification", "error", err.Error(), "endpoint", subscription.Endpoint)
+			continue
+		}
+		resp.Body.Close()
 	}
 }

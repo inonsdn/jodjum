@@ -184,7 +184,7 @@ func (r *RemindersRepo) GetNextReminder(ctx context.Context) (Reminder, error) {
 			name,
 			description
 		FROM reminders
-		WHERE is_active = TRUE
+		WHERE is_active = TRUE AND remind_timestamp <= now()
 		ORDER BY remind_timestamp ASC
 		LIMIT 1
 	`

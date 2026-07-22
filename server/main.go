@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"server/internal/auth"
 	"server/internal/config"
 	"server/internal/db"
@@ -14,10 +17,14 @@ import (
 	"server/internal/things"
 	"server/internal/token"
 	"server/internal/user"
+	"syscall"
+	"time"
 )
 
 type App struct {
-	server *http.Server
+	server      *http.Server
+	reminderApp *reminders.ReminderApp
+	notifier    notification.Notification
 }
 
 func initLogger() {
@@ -94,6 +101,11 @@ func New() *App {
 	notificationHandler := notification.NewHandler(notificationService)
 	notification.RegisterRoutes(router, authService.AuthMiddleware, notificationHandler)
 
+	slog.Info("Init reminder loop")
+	// Web Push sender + background reminder app (goroutine started in App.Run).
+	webPush := notification.NewWebPushNotification(*cfg.GetWebPushNotificationConfig(), notificationService)
+	reminderApp := reminders.NewReminderApp(remindersRepo)
+
 	server := http.Server{
 		Addr: cfg.Address(),
 		// Logger is outermost so it records every request (including the CORS
@@ -103,22 +115,47 @@ func New() *App {
 	}
 
 	return &App{
-		server: &server,
+		server:      &server,
+		reminderApp: reminderApp,
+		notifier:    webPush,
 	}
 }
 
-func (a *App) Run() {
-	slog.Info("Run and serve", "address", a.server.Addr)
-	if err := a.server.ListenAndServe(); err != nil {
-		slog.Error("ERROR", "error", err)
+func (a *App) Run(ctx context.Context) {
+	// Start the background reminder loop; it stops when ctx is cancelled.
+	a.reminderApp.Run(ctx, a.notifier)
+
+	// Serve in a goroutine so we can block on the shutdown signal below.
+	go func() {
+		slog.Info("Run and serve", "address", a.server.Addr)
+		if err := a.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("server error", "error", err)
+		}
+	}()
+
+	// Block until a stop signal cancels ctx.
+	<-ctx.Done()
+	slog.Info("shutting down")
+
+	// Give in-flight requests up to 10s to finish.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := a.server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("graceful shutdown failed", "error", err)
 	}
 }
 
 func main() {
 	initLogger()
+
+	// ctx is cancelled when the OS sends SIGINT (Ctrl-C) or SIGTERM (what
+	// Cloud Run / Fly send to stop the container).
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	app := New()
 	if app == nil {
 		return
 	}
-	app.Run()
+	app.Run(ctx)
 }
